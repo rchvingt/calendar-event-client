@@ -76,6 +76,7 @@ function index() {
 	const [endTime, setEndTime] = useState<Moment | null>(moment(new Date()));
 	const [repeat, setRepeat] = useState<string>("");
 	const [person, setPerson] = useState<string>("");
+	const [filteredPerson, setFilteredPerson] = useState<string>("");
 
 	// retrieve calendars event
 	useEffect(() => {
@@ -156,7 +157,7 @@ function index() {
 	};
 
 	const handlePersonFilter = (event: SelectChangeEvent) => {
-		// filter action event by user here ...
+		setFilteredPerson(event.target.value as string);
 	};
 
 	if (isLoading) return <p>Loading...</p>;
@@ -165,13 +166,13 @@ function index() {
 	return (
 		<>
 			<nav className="flex justify-between mb-4 border-b border-violet-100 p-4">
-				<h1 className="font-bold text-2xl text-gray-700">Calendar</h1>
+				<h1 className="font-bold text-2xl text-gray-700">Calendar Event</h1>
 			</nav>
 			<main className="grid grid-cols-10 min-h-screen p-4 gap-4">
 				{/* Sidebar */}
 				<div className="col-span-2 bg-gray-100 p-4">
 					<div className="mt-4">
-						<h3 className="font-bold mb-5">Filter Users</h3>
+						<h3 className="font-bold mb-5">Search For Person</h3>
 						{/* Add your filter user component here */}
 						<Grid item xs={6} md={6}>
 							<Box
@@ -181,7 +182,14 @@ function index() {
 							>
 								<FormControl fullWidth>
 									<InputLabel id="demo-simple-select-label">Person</InputLabel>
-									<Select labelId="demo-simple-select-label" id="demo-simple-select" value={person} defaultValue="" label="Person" onChange={handlePersonFilter}>
+									<Select
+										labelId="demo-simple-select-label"
+										id="demo-simple-select"
+										value={filteredPerson}
+										defaultValue=""
+										label="Person"
+										onChange={handlePersonFilter}
+									>
 										{users.map((user) => (
 											<MenuItem key={user.id} value={user.name}>
 												{user.name}
