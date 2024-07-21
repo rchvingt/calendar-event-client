@@ -15,10 +15,7 @@ import { TextField, Button, Dialog, DialogActions, DialogContent, DialogContentT
 import { styled } from "@mui/system";
 
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { DateTimeField } from "@mui/x-date-pickers/DateTimeField";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 
 const FormGrid = styled(Grid)(() => ({
@@ -29,19 +26,43 @@ const FormGrid = styled(Grid)(() => ({
 interface Event {
 	id: number;
 	title: string;
-	description: string;
-	start_time: Date | String;
-	end_time: Date | String;
+	date_start: Date | string;
+	date_end: Date | string;
+	start_time: Date | string;
+	end_time: Date | string;
+	is_repeat: string;
 }
+interface Users {
+	id: number;
+	name: string;
+}
+
+const REPEAT = [
+	{
+		Id: 0,
+		Name: "Does not repeat",
+	},
+	{
+		Id: 1,
+		Name: "Daily",
+	},
+	{
+		Id: 2,
+		Name: "Weekly",
+	},
+];
 function index() {
 	const [eventscalendar, setEventsCalendar] = useState<Event[]>([]);
+	const [users, setUsers] = useState<Users[]>([]);
 	const [eventscalendarID, setEventsCalendarID] = useState<number | null>(null);
 	const [nuEvent, setNuEvent] = useState<Event>({
 		id: 0,
 		title: "",
-		description: "",
+		date_start: "",
+		date_end: "",
 		start_time: "",
 		end_time: "",
+		is_repeat: "",
 	});
 	const [isModalVisible, setModalVisible] = useState(false);
 	const [isModalVisibleDelete, setModalVisibleDelete] = useState(false);
@@ -49,10 +70,12 @@ function index() {
 	const [isLoading, setLoading] = useState(true);
 
 	// form input
-	const [startDate, setStartDate] = useState<Moment | null>(null);
-	const [endDate, setEndDate] = useState<Moment | null>(null);
-	const [repeat, setRepeat] = useState<String | null>(null);
-	const [person, setPerson] = useState<String | null>(null);
+	const [dateStart, setDateStart] = useState<Moment | null>(moment(new Date()));
+	const [dateEnd, setDateEnd] = useState<Moment | null>(moment(new Date()));
+	const [startTime, setStartTime] = useState<Moment | null>(moment(new Date()));
+	const [endTime, setEndTime] = useState<Moment | null>(moment(new Date()));
+	const [repeat, setRepeat] = useState<string>("");
+	const [person, setPerson] = useState<string>("");
 
 	// retrieve calendars event
 	useEffect(() => {
@@ -64,12 +87,19 @@ function index() {
 			});
 	}, []);
 
+	useEffect(() => {
+		fetch("http://localhost:3000/api/calendars/users")
+			.then((res) => res.json())
+			.then((data) => {
+				setUsers(data.data);
+				setLoading(false);
+			});
+	}, []);
+
 	function handleDateClick(arg: { date: Date }) {
-		// console.log('Date tapped'+arg.date);
-		setNuEvent({
-			...nuEvent,
-			start_time: arg.date,
-		});
+		console.log("Date tapped" + arg.date);
+		setDateStart(moment(arg.date));
+		setDateEnd(moment(arg.date));
 		setModalVisible(!isModalVisible);
 	}
 
@@ -83,16 +113,16 @@ function index() {
 		setNuEvent({
 			id: 0,
 			title: "",
-			description: "",
+			date_start: "",
+			date_end: "",
 			start_time: "",
 			end_time: "",
+			is_repeat: "",
 		});
 		setModalVisibleDelete(!isModalVisibleDelete);
 		setEventsCalendarID(null);
-		setPerson(null);
-		setRepeat(null);
-		setStartDate(null);
-		setEndDate(null);
+		setPerson("");
+		setRepeat("");
 	}
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -109,9 +139,11 @@ function index() {
 		setNuEvent({
 			id: 0,
 			title: "",
-			description: "",
+			date_start: "",
+			date_end: "",
 			start_time: "",
 			end_time: "",
+			is_repeat: "",
 		});
 	}
 
@@ -121,6 +153,10 @@ function index() {
 
 	const handlePerson = (event: SelectChangeEvent) => {
 		setPerson(event.target.value as string);
+	};
+
+	const handlePersonFilter = (event: SelectChangeEvent) => {
+		// filter action event by user here ...
 	};
 
 	if (isLoading) return <p>Loading...</p>;
@@ -145,26 +181,22 @@ function index() {
 							>
 								<FormControl fullWidth>
 									<InputLabel id="demo-simple-select-label">Person</InputLabel>
-									<Select labelId="demo-simple-select-label" id="demo-simple-select" value={person} autowidth label="Person" onChange={handlePerson}>
-										<MenuItem value={10}>Andi</MenuItem>
-										<MenuItem value={20}>Yuan</MenuItem>
-										<MenuItem value={30}>Cakka</MenuItem>
+									<Select labelId="demo-simple-select-label" id="demo-simple-select" value={person} defaultValue="" label="Person" onChange={handlePersonFilter}>
+										{users.map((user) => (
+											<MenuItem key={user.id} value={user.name}>
+												{user.name}
+											</MenuItem>
+										))}
 									</Select>
 								</FormControl>
 							</Box>
 						</Grid>
 					</div>
 				</div>
+				{/* Calendar */}
 				<div className="col-span-8">
 					<FullCalendar
-						// plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-						// headerToolbar={{
-						// 	left: "prev,next today",
-						// 	center: "title",
-						// 	right: "dayGridMonth,timeGridWeek,timeGridDay",
-						// }}
-						// initialView="dayGridMonth"
-						plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin]}
+						plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin, interactionPlugin]}
 						headerToolbar={{
 							left: "prev,next today",
 							center: "title",
@@ -185,14 +217,15 @@ function index() {
 				<Dialog
 					open={isModalVisible}
 					onClose={handleCloseModal}
+					maxWidth={"md"}
 					PaperProps={{
 						component: "form",
 						onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
 							event.preventDefault();
 							const formData = new FormData(event.currentTarget);
 							const formJson = Object.fromEntries((formData as any).entries());
-							const email = formJson.email;
-							console.log(email);
+							const title = formJson.title;
+							console.log(title);
 							handleCloseModal();
 						},
 					}}
@@ -200,77 +233,121 @@ function index() {
 					<DialogTitle>Add Event</DialogTitle>
 					<DialogContent>
 						<Box sx={{ flexGrow: 1 }}>
-							<Grid container spacing={2}>
+							<Grid container spacing={3}>
+								{/* Input Title  */}
 								<Grid item xs={12}>
 									<TextField autoFocus required margin="dense" id="title" name="title" label="Title" type="text" fullWidth variant="outlined" />
 								</Grid>
 
+								{/* Input Date  */}
 								<Grid item xs={6} md={6}>
 									<LocalizationProvider dateAdapter={AdapterMoment}>
-										<Stack
-											spacing={2}
-											sx={{
-												minWidth: 205,
-											}}
-										>
-											<DateTimePicker
-												label="Start Date"
-												value={startDate}
-												onChange={setStartDate}
-												// format="DD/MM/YYYY hh:mm aa"
-												referenceDate={moment("2022-04-17T15:30")}
+										<Stack spacing={2} sx={{ minWidth: 205 }}>
+											<DatePicker
+												label="Date Start"
+												value={dateStart}
+												onChange={(date) => {
+													setNuEvent({
+														...nuEvent,
+														date_start: moment(date).format("LL"),
+													});
+												}}
+												format="dddd, DD/MM/YYYY"
+											/>
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2} sx={{ minWidth: 205 }}>
+											<DatePicker
+												label="Date End"
+												value={dateEnd}
+												onChange={(date) => {
+													setNuEvent({
+														...nuEvent,
+														date_end: moment(date).format("LL"),
+													});
+												}}
+												format="dddd, DD/MM/YYYY"
 											/>
 										</Stack>
 									</LocalizationProvider>
 								</Grid>
 
-								<Grid item xs={6} md={6}>
+								{/* Input DateTime End */}
+								<Grid item xs={6} md={3}>
 									<LocalizationProvider dateAdapter={AdapterMoment}>
-										<Stack
-											spacing={2}
-											sx={{
-												minWidth: 205,
-											}}
-										>
-											<DateTimePicker
-												label="End Date"
-												value={endDate}
-												onChange={setEndDate}
-												// format="DD/MM/YYYY hh:mm aa"
-												referenceDate={moment("2022-04-17T15:30")}
+										<Stack spacing={2}>
+											<TimePicker
+												label="Start Time"
+												onChange={(time) => {
+													setNuEvent({
+														...nuEvent,
+														start_time: moment(time).format("LT"),
+													});
+												}}
+											/>
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+								<Grid item xs={6} md={3}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2}>
+											<TimePicker
+												label="End Time"
+												onChange={(time) => {
+													setNuEvent({
+														...nuEvent,
+														end_time: moment(time).format("LT"),
+													});
+												}}
 											/>
 										</Stack>
 									</LocalizationProvider>
 								</Grid>
 
-								<Grid item xs={6} md={6}>
-									<Box
-										sx={{
-											minWidth: 120,
-										}}
-									>
+								{/* Input Repeat? */}
+								<Grid item xs={6} md={3}>
+									<Box>
 										<FormControl fullWidth>
 											<InputLabel id="demo-simple-select-label">Repeat?</InputLabel>
-											<Select labelId="demo-simple-select-label" id="demo-simple-select" value={repeat} label="Repeat" autowidth onChange={handleRepeat}>
-												<MenuItem value={10}>Does not repeat</MenuItem>
-												<MenuItem value={20}>Daily</MenuItem>
-												<MenuItem value={30}>Weekly</MenuItem>
+											<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={repeat}
+												label="Repeat"
+												defaultValue=""
+												onChange={handleRepeat}
+											>
+												{REPEAT.map((repeat) => (
+													<MenuItem key={repeat.Id} value={repeat.Name}>
+														{repeat.Name}
+													</MenuItem>
+												))}
 											</Select>
 										</FormControl>
 									</Box>
 								</Grid>
-								<Grid item xs={6} md={6}>
-									<Box
-										sx={{
-											minWidth: 120,
-										}}
-									>
+
+								{/* Input Person */}
+								<Grid item xs={6} md={3}>
+									<Box>
 										<FormControl fullWidth>
 											<InputLabel id="demo-simple-select-label">Person</InputLabel>
-											<Select labelId="demo-simple-select-label" id="demo-simple-select" value={person} autowidth label="Person" onChange={handlePerson}>
-												<MenuItem value={10}>Andi</MenuItem>
-												<MenuItem value={20}>Yuan</MenuItem>
-												<MenuItem value={30}>Cakka</MenuItem>
+											<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={person}
+												label="Person"
+												defaultValue=""
+												onChange={handlePerson}
+											>
+												{users.map((user) => (
+													<MenuItem key={user.id} value={user.name}>
+														{user.name}
+													</MenuItem>
+												))}
 											</Select>
 										</FormControl>
 									</Box>
