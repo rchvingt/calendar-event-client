@@ -1,4 +1,14 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app). Build a Full-stack Calendar Event App with Next.js, Tailwind, [Material UI](https://mui.com/) and [FullCalendar](https://fullcalendar.io/)
+# Frontend Repository for Full Stack Calendar Event Project
+
+## Description
+
+This repository contains the frontend code for the full stack calendar event application built with [Next.js](https://nextjs.org/),[Material UI](https://mui.com/) and [FullCalendar](https://fullcalendar.io/).
+
+## Related Repositories
+
+This frontend interacts with the backend API provided by the following repository:
+
+- [Backend Repository](https://github.com/rchvingt/nodejs-express-mysql.git) - The backend of this project is built with Express and MySQL.
 
 ## Getting Started
 
