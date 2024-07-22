@@ -27,19 +27,33 @@ import {
 	MenuItem,
 	useMediaQuery,
 	IconButton,
+	AppBar,
+	Toolbar,
+	Typography,
+	List,
+	ListItemButton,
+	Divider,
+	ListItemText,
+	Slide,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import { TransitionProps } from "@mui/material/transitions";
 
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
+import CalendarEventUpdate from "./CalendarEventUpdate";
 
-const FormGrid = styled(Grid)(() => ({
-	display: "flex",
-	flexDirection: "column",
-}));
+const Transition = React.forwardRef(function Transition(
+	props: TransitionProps & {
+		children: React.ReactElement;
+	},
+	ref: React.Ref<unknown>
+) {
+	return <Slide direction="up" ref={ref} {...props} />;
+});
 
 // Structur Input Event Data
 interface Event {
@@ -115,6 +129,22 @@ function CalendarEvent() {
 	const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 	const [titleEvent, setTitleEvent] = useState<string>("");
 
+	const [isEdit, setEdit] = React.useState(false);
+
+	const handleClickEdit = () => {
+		setModalVisibleDelete(!isModalVisibleDelete);
+		setEdit(!isEdit);
+	};
+
+	const closeDeleteDialog = () => {
+		setEventsCalendarID(null);
+		setEdit(!isEdit);
+	};
+
+	const handleClose = () => {
+		setEdit(!isEdit);
+	};
+
 	// Retrieve Events Data
 	useEffect(() => {
 		const fetchEvents = async () => {
@@ -142,11 +172,9 @@ function CalendarEvent() {
 			});
 	}, []);
 
-	function handleDeleteModal(data: { event: { id: string } }) {
-		setModalVisibleDelete(!isModalVisibleDelete);
-		setEventsCalendarID(Number(data.event.id));
-	}
-
+	// open dialog event to choose action -> delete, edit or close dialog
+	// set title to display as Dialogue Title
+	// set eventCalendarID for delete and edit purpose
 	function handleEventClick(clickInfo: EventClickArg) {
 		setModalVisibleDelete(!isModalVisibleDelete);
 		setTitleEvent(clickInfo.event.title);
@@ -316,7 +344,7 @@ function CalendarEvent() {
 
 	if (isLoading) return <CircularProgress color="secondary" />;
 	if (!eventscalendar) return <p>No Event data</p>;
-
+	console.log("value of eventscalendar", eventscalendarID);
 	return (
 		<div className="grid grid-cols-10 min-h-screen p-4 gap-4">
 			{/* Sidebar */}
@@ -519,9 +547,21 @@ function CalendarEvent() {
 					>
 						Delete
 					</Button>
-					<Button onClick={() => console.log("Edit")}>Edit</Button>
+					<Button
+						onClick={() => {
+							if (eventscalendarID) {
+								handleClickEdit();
+								setModalVisibleDelete(!isModalVisibleDelete);
+							}
+						}}
+					>
+						Edit
+					</Button>
 				</DialogActions>
 			</Dialog>
+
+			{/* Edit Event Calendar */}
+			<CalendarEventUpdate visible={isEdit} onClose={closeDeleteDialog} id={eventscalendarID} />
 		</div>
 	);
 }
