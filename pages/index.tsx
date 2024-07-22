@@ -31,6 +31,7 @@ import { styled } from "@mui/system";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
+import { title } from "process";
 
 const FormGrid = styled(Grid)(() => ({
 	display: "flex",
@@ -46,6 +47,8 @@ interface Event {
 	start_time: Date | string;
 	end_time: Date | string;
 	is_repeat: string;
+	person_id: number | null;
+	person_name: string;
 }
 
 // Structur Event Data
@@ -88,6 +91,8 @@ function index() {
 		start_time: "",
 		end_time: "",
 		is_repeat: "",
+		person_id: null,
+		person_name: "",
 	});
 	const [isModalVisible, setModalVisible] = useState(false);
 	const [isModalVisibleDelete, setModalVisibleDelete] = useState(false);
@@ -144,6 +149,8 @@ function index() {
 			start_time: "",
 			end_time: "",
 			is_repeat: "",
+			person_id: null,
+			person_name: "",
 		});
 		setModalVisibleDelete(!isModalVisibleDelete);
 		setEventsCalendarID(null);
@@ -155,8 +162,17 @@ function index() {
 		setRepeat(event.target.value as string);
 	};
 
-	const handlePerson = (event: SelectChangeEvent) => {
-		setPerson(event.target.value as string);
+	const handlePerson = (event: React.ChangeEvent<{ value: unknown }>) => {
+		const selectedUserId = event.target.value as number;
+		const selectedUser = users.find((user) => user.id === selectedUserId);
+
+		if (selectedUser) {
+			setNuEvent({
+				...nuEvent,
+				person_id: selectedUser.id,
+				person_name: selectedUser.name,
+			});
+		}
 	};
 
 	const handlePersonFilter = (event: SelectChangeEvent) => {
@@ -166,32 +182,39 @@ function index() {
 	// handle submit new event
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		const formData = {
-			...nuEvent,
+			title: nuEvent.title,
 			date_start: nuEvent.date_start || moment(dateStart).format("YYYY-MM-DD"),
 			date_end: nuEvent.date_end || moment(dateEnd).format("YYYY-MM-DD"),
-			start_time: nuEvent.start_time || moment(startTime).format("LT"),
-			end_time: nuEvent.end_time || moment(endTime).format("LT"),
+			start_time: nuEvent.start_time,
+			end_time: nuEvent.end_time,
+			user_id: nuEvent.person_id,
 		};
 		console.log(formData);
 		event.preventDefault();
-		// try {
-		// 	const response = await fetch("http://localhost:3000/api/calendars", {
-		// 		method: "POST",
-		// 		headers: {
-		// 			"Content-Type": "application/json",
-		// 		},
-		// 		body: JSON.stringify(nuEvent),
-		// 	});
-		// 	if (response.ok) {
-		// 		console.log("Event submitted successfully");
-		// 		// Optionally, you can handle further actions here (e.g., updating state or UI)
-		// 	} else {
-		// 		console.error("Failed to submit event");
-		// 	}
-		// } catch (error) {
-		// 	console.error("Error submitting event:", error);
-		// }
-		// setModalVisible(!isModalVisible);
+		try {
+			const response = await fetch("http://localhost:3000/api/calendars", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(formData),
+			});
+			if (response.ok) {
+				console.log("Event submitted successfully");
+				// Fetch the updated list of events
+				fetch("http://localhost:3000/api/calendars/events")
+					.then((res) => res.json())
+					.then((data) => {
+						setEventsCalendar(data.data);
+						setLoading(false);
+					});
+			} else {
+				console.error("Failed to submit event");
+			}
+		} catch (error) {
+			console.error("Error submitting event:", error);
+		}
+		setModalVisible(!isModalVisible);
 	};
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -408,13 +431,13 @@ function index() {
 											<Select
 												labelId="demo-simple-select-label"
 												id="demo-simple-select"
-												value={person}
+												value={nuEvent.person_id || ""}
 												label="Person"
 												defaultValue=""
 												onChange={handlePerson}
 											>
 												{users.map((user) => (
-													<MenuItem key={user.id} value={user.name}>
+													<MenuItem key={user.id} value={user.id}>
 														{user.name}
 													</MenuItem>
 												))}
