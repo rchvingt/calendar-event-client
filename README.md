@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app). Build a Full-stack Calendar Event App with Next.js, Tailwind, [Material UI][https://mui.com/] and [FullCalendar][https://fullcalendar.io/]
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app). Build a Full-stack Calendar Event App with Next.js, Tailwind, Material UI [https://mui.com/] and FullCalendar [https://fullcalendar.io/]
 
 ## Getting Started
 
