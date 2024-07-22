@@ -8,10 +8,24 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import multiMonthPlugin from "@fullcalendar/multimonth";
 
-import { EventSourceInput } from "@fullcalendar/core/index.js";
-
 // component UI
-import { TextField, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Stack, Grid, Box, InputLabel, FormControl, MenuItem } from "@mui/material";
+import {
+	CircularProgress,
+	TextField,
+	Button,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
+	Stack,
+	Grid,
+	Box,
+	InputLabel,
+	FormControl,
+	MenuItem,
+	Typography,
+} from "@mui/material";
 import { styled } from "@mui/system";
 
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
@@ -23,6 +37,7 @@ const FormGrid = styled(Grid)(() => ({
 	flexDirection: "column",
 }));
 
+// Structur Input Event Data
 interface Event {
 	id: number;
 	title: string;
@@ -32,11 +47,20 @@ interface Event {
 	end_time: Date | string;
 	is_repeat: string;
 }
+
+// Structur Event Data
+interface EventData {
+	id: string;
+	title: string;
+	start: Date;
+	end: Date;
+}
 interface Users {
 	id: number;
 	name: string;
 }
 
+// Repeat Option
 const REPEAT = [
 	{
 		Id: 0,
@@ -51,8 +75,9 @@ const REPEAT = [
 		Name: "Weekly",
 	},
 ];
+
 function index() {
-	const [eventscalendar, setEventsCalendar] = useState<Event[]>([]);
+	const [eventscalendar, setEventsCalendar] = useState<EventData[]>([]);
 	const [users, setUsers] = useState<Users[]>([]);
 	const [eventscalendarID, setEventsCalendarID] = useState<number | null>(null);
 	const [nuEvent, setNuEvent] = useState<Event>({
@@ -66,7 +91,6 @@ function index() {
 	});
 	const [isModalVisible, setModalVisible] = useState(false);
 	const [isModalVisibleDelete, setModalVisibleDelete] = useState(false);
-
 	const [isLoading, setLoading] = useState(true);
 
 	// form input
@@ -78,16 +102,24 @@ function index() {
 	const [person, setPerson] = useState<string>("");
 	const [filteredPerson, setFilteredPerson] = useState<string>("");
 
-	// retrieve calendars event
+	// Retrieve Events Data
 	useEffect(() => {
-		fetch("http://localhost:3000/api/calendars")
-			.then((res) => res.json())
-			.then((data) => {
+		const fetchEvents = async () => {
+			try {
+				const response = await fetch("http://localhost:3000/api/calendars/events");
+				const data = await response.json();
 				setEventsCalendar(data.data);
 				setLoading(false);
-			});
+			} catch (error) {
+				console.error("Error fetching events:", error);
+				setLoading(false);
+			}
+		};
+
+		fetchEvents();
 	}, []);
 
+	// Retrieve Users Data
 	useEffect(() => {
 		fetch("http://localhost:3000/api/calendars/users")
 			.then((res) => res.json())
@@ -96,13 +128,6 @@ function index() {
 				setLoading(false);
 			});
 	}, []);
-
-	function handleDateClick(arg: { date: Date }) {
-		console.log("Date tapped" + arg.date);
-		setDateStart(moment(arg.date));
-		setDateEnd(moment(arg.date));
-		setModalVisible(!isModalVisible);
-	}
 
 	function handleDeleteModal(data: { event: { id: string } }) {
 		setModalVisibleDelete(!isModalVisibleDelete);
@@ -126,28 +151,6 @@ function index() {
 		setRepeat("");
 	}
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-		setNuEvent({
-			...nuEvent,
-			title: e.target.value,
-		});
-	};
-
-	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault();
-		setEventsCalendar([...eventscalendar, nuEvent]);
-		setModalVisible(!isModalVisible);
-		setNuEvent({
-			id: 0,
-			title: "",
-			date_start: "",
-			date_end: "",
-			start_time: "",
-			end_time: "",
-			is_repeat: "",
-		});
-	}
-
 	const handleRepeat = (event: SelectChangeEvent) => {
 		setRepeat(event.target.value as string);
 	};
@@ -160,7 +163,92 @@ function index() {
 		setFilteredPerson(event.target.value as string);
 	};
 
-	if (isLoading) return <p>Loading...</p>;
+	// handle submit new event
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+		const formData = {
+			...nuEvent,
+			date_start: nuEvent.date_start || moment(dateStart).format("YYYY-MM-DD"),
+			date_end: nuEvent.date_end || moment(dateEnd).format("YYYY-MM-DD"),
+			start_time: nuEvent.start_time || moment(startTime).format("LT"),
+			end_time: nuEvent.end_time || moment(endTime).format("LT"),
+		};
+		console.log(formData);
+		event.preventDefault();
+		// try {
+		// 	const response = await fetch("http://localhost:3000/api/calendars", {
+		// 		method: "POST",
+		// 		headers: {
+		// 			"Content-Type": "application/json",
+		// 		},
+		// 		body: JSON.stringify(nuEvent),
+		// 	});
+		// 	if (response.ok) {
+		// 		console.log("Event submitted successfully");
+		// 		// Optionally, you can handle further actions here (e.g., updating state or UI)
+		// 	} else {
+		// 		console.error("Failed to submit event");
+		// 	}
+		// } catch (error) {
+		// 	console.error("Error submitting event:", error);
+		// }
+		// setModalVisible(!isModalVisible);
+	};
+
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
+		setNuEvent({
+			...nuEvent,
+			[name]: value,
+		});
+	};
+
+	function handleDateClick(arg: { date: Date }) {
+		console.log("Date tapped" + arg.date);
+		setDateStart(moment(arg.date));
+		setDateEnd(moment(arg.date));
+		setModalVisible(!isModalVisible);
+	}
+
+	const handleDateStartChange = (date: Moment | null) => {
+		if (date) {
+			setDateStart(date);
+			setNuEvent({
+				...nuEvent,
+				date_start: moment(date).format("YYYY-MM-DD"),
+			});
+		}
+	};
+
+	const handleDateEndChange = (date: Moment | null) => {
+		if (date) {
+			setDateEnd(date);
+			setNuEvent({
+				...nuEvent,
+				date_end: moment(date).format("YYYY-MM-DD"),
+			});
+		}
+	};
+	const handleTimeStartChange = (date: Moment | null) => {
+		if (date) {
+			setStartTime(date);
+			setNuEvent({
+				...nuEvent,
+				start_time: moment(date).format("LT"),
+			});
+		}
+	};
+
+	const handleTimeEndChange = (date: Moment | null) => {
+		if (date) {
+			setEndTime(date);
+			setNuEvent({
+				...nuEvent,
+				end_time: moment(date).format("LT"),
+			});
+		}
+	};
+
+	if (isLoading) return <CircularProgress color="secondary" />;
 	if (!eventscalendar) return <p>No Event data</p>;
 
 	return (
@@ -173,13 +261,10 @@ function index() {
 				<div className="col-span-2 bg-gray-100 p-4">
 					<div className="mt-4">
 						<h3 className="font-bold mb-5">Search For Person</h3>
-						{/* Add your filter user component here */}
+
+						{/* filter user */}
 						<Grid item xs={6} md={6}>
-							<Box
-								sx={{
-									minWidth: 120,
-								}}
-							>
+							<Box sx={{ minWidth: 120 }}>
 								<FormControl fullWidth>
 									<InputLabel id="demo-simple-select-label">Person</InputLabel>
 									<Select
@@ -201,7 +286,8 @@ function index() {
 						</Grid>
 					</div>
 				</div>
-				{/* Calendar */}
+
+				{/* Calendar Event*/}
 				<div className="col-span-8">
 					<FullCalendar
 						plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin, interactionPlugin]}
@@ -228,14 +314,7 @@ function index() {
 					maxWidth={"md"}
 					PaperProps={{
 						component: "form",
-						onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
-							event.preventDefault();
-							const formData = new FormData(event.currentTarget);
-							const formJson = Object.fromEntries((formData as any).entries());
-							const title = formJson.title;
-							console.log(title);
-							handleCloseModal();
-						},
+						onSubmit: handleSubmit,
 					}}
 				>
 					<DialogTitle>Add Event</DialogTitle>
@@ -244,41 +323,40 @@ function index() {
 							<Grid container spacing={3}>
 								{/* Input Title  */}
 								<Grid item xs={12}>
-									<TextField autoFocus required margin="dense" id="title" name="title" label="Title" type="text" fullWidth variant="outlined" />
+									<TextField
+										autoFocus
+										required
+										margin="dense"
+										id="title"
+										name="title"
+										label="Title"
+										type="text"
+										fullWidth
+										variant="outlined"
+										onChange={handleInputChange}
+									/>
 								</Grid>
 
-								{/* Input Date  */}
+								{/* Input Date Start */}
 								<Grid item xs={6} md={6}>
 									<LocalizationProvider dateAdapter={AdapterMoment}>
 										<Stack spacing={2} sx={{ minWidth: 205 }}>
 											<DatePicker
 												label="Date Start"
 												value={dateStart}
-												onChange={(date) => {
-													setNuEvent({
-														...nuEvent,
-														date_start: moment(date).format("LL"),
-													});
-												}}
+												onChange={handleDateStartChange}
 												format="dddd, DD/MM/YYYY"
+												defaultValue={moment(dateStart)}
 											/>
 										</Stack>
 									</LocalizationProvider>
 								</Grid>
+
+								{/* Input Date End */}
 								<Grid item xs={6} md={6}>
 									<LocalizationProvider dateAdapter={AdapterMoment}>
 										<Stack spacing={2} sx={{ minWidth: 205 }}>
-											<DatePicker
-												label="Date End"
-												value={dateEnd}
-												onChange={(date) => {
-													setNuEvent({
-														...nuEvent,
-														date_end: moment(date).format("LL"),
-													});
-												}}
-												format="dddd, DD/MM/YYYY"
-											/>
+											<DatePicker label="Date End" value={dateEnd} onChange={handleDateEndChange} format="dddd, DD/MM/YYYY" />
 										</Stack>
 									</LocalizationProvider>
 								</Grid>
@@ -287,30 +365,14 @@ function index() {
 								<Grid item xs={6} md={3}>
 									<LocalizationProvider dateAdapter={AdapterMoment}>
 										<Stack spacing={2}>
-											<TimePicker
-												label="Start Time"
-												onChange={(time) => {
-													setNuEvent({
-														...nuEvent,
-														start_time: moment(time).format("LT"),
-													});
-												}}
-											/>
+											<TimePicker label="Start Time" onChange={handleTimeStartChange} />
 										</Stack>
 									</LocalizationProvider>
 								</Grid>
 								<Grid item xs={6} md={3}>
 									<LocalizationProvider dateAdapter={AdapterMoment}>
 										<Stack spacing={2}>
-											<TimePicker
-												label="End Time"
-												onChange={(time) => {
-													setNuEvent({
-														...nuEvent,
-														end_time: moment(time).format("LT"),
-													});
-												}}
-											/>
+											<TimePicker label="End Time" onChange={handleTimeEndChange} />
 										</Stack>
 									</LocalizationProvider>
 								</Grid>
