@@ -1,7 +1,7 @@
 "use client";
-import React, { Fragment, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import moment, { Moment } from "moment";
-import { EventApi, DateSelectArg, EventClickArg, EventContentArg, formatDate } from "@fullcalendar/core";
+import { EventClickArg } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { Draggable, DropArg } from "@fullcalendar/interaction";
@@ -25,19 +25,9 @@ import {
 	InputLabel,
 	FormControl,
 	MenuItem,
-	useMediaQuery,
 	IconButton,
-	AppBar,
-	Toolbar,
-	Typography,
-	List,
-	ListItemButton,
-	Divider,
-	ListItemText,
 	Slide,
 } from "@mui/material";
-import { styled } from "@mui/system";
-import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import { TransitionProps } from "@mui/material/transitions";
 
@@ -45,6 +35,8 @@ import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import CalendarEventUpdate from "./CalendarEventUpdate";
+
+import { INITIAL_EVENTS, createEventId } from "./event-utils";
 
 const Transition = React.forwardRef(function Transition(
 	props: TransitionProps & {
@@ -125,8 +117,6 @@ function CalendarEvent() {
 	const [person, setPerson] = useState<string>("");
 	const [filteredPerson, setFilteredPerson] = useState<string>("");
 
-	const theme = useTheme();
-	const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 	const [titleEvent, setTitleEvent] = useState<string>("");
 
 	const [isEdit, setEdit] = React.useState(false);
@@ -138,10 +128,6 @@ function CalendarEvent() {
 
 	const closeDeleteDialog = () => {
 		setEventsCalendarID(null);
-		setEdit(!isEdit);
-	};
-
-	const handleClose = () => {
 		setEdit(!isEdit);
 	};
 
@@ -176,9 +162,10 @@ function CalendarEvent() {
 	// set title to display as Dialogue Title
 	// set eventCalendarID for delete and edit purpose
 	function handleEventClick(clickInfo: EventClickArg) {
+		// console.log("EventClickArg", clickInfo);
+		setEventsCalendarID(parseInt(clickInfo.event.id));
 		setModalVisibleDelete(!isModalVisibleDelete);
 		setTitleEvent(clickInfo.event.title);
-		setEventsCalendarID(parseInt(clickInfo.event.id));
 	}
 
 	function handleCloseModal() {
@@ -230,6 +217,7 @@ function CalendarEvent() {
 			end_time: nuEvent.end_time,
 			user_id: nuEvent.person_id,
 		};
+		// console.log(formData);
 		event.preventDefault();
 		try {
 			const response = await fetch("http://localhost:3000/api/calendars", {
@@ -240,7 +228,7 @@ function CalendarEvent() {
 				body: JSON.stringify(formData),
 			});
 			if (response.ok) {
-				console.log("Event submitted successfully");
+				alert("Event submitted successfully");
 				// Fetch the updated list of events
 				fetch("http://localhost:3000/api/calendars/events")
 					.then((res) => res.json())
@@ -379,6 +367,8 @@ function CalendarEvent() {
 						right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek",
 					}}
 					events={eventscalendar}
+					eventBackgroundColor="#DF234C"
+					eventBorderColor="#F0778F"
 					nowIndicator={true}
 					editable={false}
 					droppable={false}
@@ -434,6 +424,15 @@ function CalendarEvent() {
 								</LocalizationProvider>
 							</Grid>
 
+							{/* Input Time Start */}
+							<Grid item xs={6} md={6}>
+								<LocalizationProvider dateAdapter={AdapterMoment}>
+									<Stack spacing={2}>
+										<TimePicker label="Start Time" onChange={handleTimeStartChange} />
+									</Stack>
+								</LocalizationProvider>
+							</Grid>
+
 							{/* Input Date End */}
 							<Grid item xs={6} md={6}>
 								<LocalizationProvider dateAdapter={AdapterMoment}>
@@ -443,15 +442,8 @@ function CalendarEvent() {
 								</LocalizationProvider>
 							</Grid>
 
-							{/* Input DateTime End */}
-							<Grid item xs={6} md={3}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2}>
-										<TimePicker label="Start Time" onChange={handleTimeStartChange} />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
-							<Grid item xs={6} md={3}>
+							{/* Input Time End */}
+							<Grid item xs={6} md={6}>
 								<LocalizationProvider dateAdapter={AdapterMoment}>
 									<Stack spacing={2}>
 										<TimePicker label="End Time" onChange={handleTimeEndChange} />
@@ -546,8 +538,7 @@ function CalendarEvent() {
 					>
 						Delete
 					</Button>
-					{/* Next: retriev GET event/id */}
-					{/* sent them as data param through this */}
+
 					<Button
 						onClick={() => {
 							if (eventscalendarID) {
@@ -562,7 +553,7 @@ function CalendarEvent() {
 			</Dialog>
 
 			{/* Edit Event Calendar */}
-			<CalendarEventUpdate visible={isEdit} onClose={closeDeleteDialog} id={eventscalendarID} />
+			<CalendarEventUpdate visible={isEdit} onClose={closeDeleteDialog} id={eventscalendarID} setEventsCalendar={setEventsCalendar} setLoading={setLoading} />
 		</div>
 	);
 }

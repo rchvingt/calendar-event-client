@@ -27,10 +27,33 @@ const Transition = React.forwardRef(function Transition(
 	return <Slide direction="up" ref={ref} {...props} />;
 });
 
-interface DeleteEventDialogProps {
+// Structur Input Event Data
+interface Event {
+	id: number;
+	title: string;
+	date_start: Date | string;
+	date_end: Date | string;
+	start_time: Date | string | null;
+	end_time: Date | string | null;
+	is_repeat: string;
+	person_id: number | null;
+	person_name: string;
+}
+
+// Structur Event Data
+interface EventData {
+	id: string;
+	title: string;
+	start: Date;
+	end: Date;
+}
+
+interface UpdateFormDialogProps {
 	visible: boolean;
 	onClose: () => void;
 	id: number | null;
+	setEventsCalendar: React.Dispatch<React.SetStateAction<Event[]>>;
+	setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Structur User Data
@@ -55,57 +78,13 @@ const REPEAT = [
 	},
 ];
 
-interface Event {
-	id: number;
-	title: string;
-	date_start: Date | string;
-	date_end: Date | string;
-	start_time: Date | string;
-	end_time: Date | string;
-	is_repeat: string;
-	person_id: string | number;
-	person_name: string;
-}
-
 // set param data edit as default value
 
-const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClose, id }) => {
+const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose, id, setEventsCalendar, setLoading }) => {
 	const [selectedEventId, setSelectedEventId] = React.useState<number | null>(id);
 	const [isDialogOpen, setDialogOpen] = React.useState<boolean>(visible);
 	const [person, setPerson] = React.useState<string>("");
-	const [loading, setLoading] = React.useState<boolean>(false);
-
-	React.useEffect(() => {
-		const fetchEvents = async () => {
-			setLoading(true);
-			try {
-				const response = await fetch(`http://localhost:3000/api/calendars/${id}`);
-				const data = await response.json();
-				console.log(data.data);
-				// setEventData(data.data);
-				setNuEvent({
-					id: data.data.id,
-					title: data.data.title,
-					date_start: data.data.date_start,
-					date_end: data.data.date_end,
-					start_time: data.data.start_time,
-					end_time: data.data.end_time,
-					is_repeat: data.data.is_repeat,
-					person_id: data.data.person_id || "",
-					person_name: data.data.person_name,
-				});
-
-				setLoading(false);
-			} catch (error) {
-				console.error("Error fetching events:", error);
-				setLoading(false);
-			}
-		};
-
-		if (visible && id) {
-			fetchEvents();
-		}
-	}, [id, visible]);
+	const [loadingLocal, setLoadingLocal] = React.useState<boolean>(false);
 	const [nuEvent, setNuEvent] = React.useState<Event>({
 		id: 0,
 		title: "",
@@ -114,9 +93,43 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 		start_time: "",
 		end_time: "",
 		is_repeat: "",
-		person_id: "",
+		person_id: null,
 		person_name: "",
 	});
+	const [de, setDe] = React.useState([]);
+
+	React.useEffect(() => {
+		const fetchEvents = async () => {
+			setLoadingLocal(true);
+			try {
+				const response = await fetch(`http://localhost:3000/api/calendars/${id}`);
+				const data = await response.json();
+				setDe(data.data);
+				// console.log(data.data);
+				// setEventData(data.data);
+				setNuEvent({
+					id: data.data.id,
+					title: data.data.title,
+					date_start: data.data.date_start,
+					date_end: data.data.date_end,
+					start_time: moment(data.data.date_start).format("yyyy-MM-DD") + "T" + data.data.start_time,
+					end_time: moment(data.data.date_end).format("yyyy-MM-DD") + "T" + data.data.end_time,
+					is_repeat: data.data.is_repeat,
+					person_id: data.data.user_id || "",
+					person_name: data.data.person_name,
+				});
+
+				setLoadingLocal(false);
+			} catch (error) {
+				console.error("Error fetching events:", error);
+				setLoadingLocal(false);
+			}
+		};
+
+		if (visible && id) {
+			fetchEvents();
+		}
+	}, [id, visible]);
 
 	const [dateStart, setDateStart] = React.useState<Moment | null>(moment(new Date()));
 	const [dateEnd, setDateEnd] = React.useState<Moment | null>(moment(new Date()));
@@ -128,17 +141,16 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 
 	React.useEffect(() => {
 		const fetchUser = async () => {
-			setLoading(true);
+			setLoadingLocal(true);
 			try {
 				const response = await fetch(`http://localhost:3000/api/calendars/users`);
 				const data = await response.json();
-				console.log(data.data);
-				// setEventData(data.data);
+				// console.log(data.data);
 				setUsers(data.data);
-				setLoading(false);
+				setLoadingLocal(false);
 			} catch (error) {
 				console.error("Error fetching events:", error);
-				setLoading(false);
+				setLoadingLocal(false);
 			}
 		};
 
@@ -172,7 +184,7 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 			setStartTime(date);
 			setNuEvent({
 				...nuEvent,
-				start_time: moment(date).format("LT"),
+				start_time: moment(nuEvent.date_end).format("yyyy-MM-DD") + "T" + moment(date).format("HH:mm:ss"), //format start time -> yyyy-MM-DD T HH:mm:ss
 			});
 		}
 	};
@@ -182,7 +194,7 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 			setEndTime(date);
 			setNuEvent({
 				...nuEvent,
-				end_time: moment(date).format("LT"),
+				end_time: moment(nuEvent.date_end).format("yyyy-MM-DD") + "T" + moment(date).format("HH:mm:ss"), //format end time -> yyyy-MM-DD T HH:mm:ss
 			});
 		}
 	};
@@ -195,7 +207,7 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 		});
 	};
 
-	const handlePerson = (event: SelectChangeEvent) => {
+	const handlePersonX = (event: SelectChangeEvent) => {
 		const selectedUserId = parseInt(event.target.value);
 		const selectedUser = users.find((user) => user.id === selectedUserId);
 
@@ -208,131 +220,205 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 		}
 	};
 
+	const handlePerson = (event: SelectChangeEvent<number>) => {
+		const selectedUserId = event.target.value as number;
+		setNuEvent((prevEvent) => ({
+			...prevEvent,
+			person_id: selectedUserId,
+			person_name: users.find((user) => user.id === selectedUserId)?.name || "",
+		}));
+	};
+
 	const handleRepeat = (event: SelectChangeEvent) => {
 		setRepeat(event.target.value as string);
 	};
 
-	if (loading) return <CircularProgress color="secondary" />;
-	return (
-		<React.Fragment>
-			<Dialog fullScreen open={visible} onClose={onClose} TransitionComponent={Transition}>
-				<AppBar sx={{ position: "relative" }} enableColorOnDark={true} color={"primary"}>
-					<Toolbar>
-						<IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
-							<CloseIcon />
-						</IconButton>
-						<Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-							Update Event
-						</Typography>
-						<Button autoFocus color="inherit" onClick={onClose}>
-							save
-						</Button>
-					</Toolbar>
-				</AppBar>
-				<DialogContent>
-					<Box sx={{ flexGrow: 1 }}>
-						<Grid container spacing={3}>
-							{/* Input Title  */}
-							<Grid item xs={12}>
-								<TextField
-									required
-									margin="dense"
-									id="title"
-									value={nuEvent.title}
-									name="title"
-									label="Title"
-									type="text"
-									fullWidth
-									variant="outlined"
-									onChange={handleInputChange}
-								/>
-							</Grid>
+	// handle submit update event
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+		const formData = {
+			title: nuEvent.title,
+			date_start: moment(nuEvent.date_start).format("YYYY-MM-DD"),
+			date_end: moment(nuEvent.date_end).format("YYYY-MM-DD"),
+			start_time: moment(nuEvent.start_time).format("HH:mm:ss"),
+			end_time: moment(nuEvent.end_time).format("HH:mm:ss"),
+			user_id: nuEvent.person_id,
+		};
+		// console.log(formData);
+		event.preventDefault();
+		try {
+			const response = await fetch(`http://localhost:3000/api/calendars/${id}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(formData),
+			});
+			if (response.ok) {
+				alert("Event submitted successfully");
+				onClose();
+				// Fetch the updated list of events
+				fetch("http://localhost:3000/api/calendars/events")
+					.then((res) => res.json())
+					.then((data) => {
+						setEventsCalendar(data.data);
+						setLoading(false);
+					});
+			} else {
+				console.error("Failed to submit event");
+			}
+		} catch (error) {
+			console.error("Error submitting event:", error);
+		}
+	};
 
-							{/* Input Date Start */}
-							<Grid item xs={6} md={6}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2} sx={{ minWidth: 205 }}>
-										<DatePicker
-											label="Date Start"
-											value={moment(nuEvent.date_start)}
-											onChange={handleDateStartChange}
-											format="dddd, DD/MM/YYYY"
-											defaultValue={moment(dateStart)}
-										/>
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
+	if (loadingLocal) return <CircularProgress color="secondary" />;
+	if (de) {
+		// console.log("nuEvent", nuEvent);
+		return (
+			<React.Fragment>
+				<Dialog
+					fullScreen
+					open={visible}
+					onClose={onClose}
+					TransitionComponent={Transition}
+					PaperProps={{
+						component: "form",
+						onSubmit: handleSubmit,
+					}}
+				>
+					<AppBar sx={{ position: "relative" }} enableColorOnDark={true} color={"primary"}>
+						<Toolbar>
+							<IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
+								<CloseIcon />
+							</IconButton>
+							<Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+								Update Event
+							</Typography>
+							<Button type="submit" color="inherit">
+								SAVE
+							</Button>
+						</Toolbar>
+					</AppBar>
+					<DialogContent>
+						<Box sx={{ flexGrow: 1 }}>
+							<Grid container spacing={3}>
+								{/* Input Title  */}
+								<Grid item xs={12}>
+									<TextField
+										required
+										margin="dense"
+										id="title"
+										value={nuEvent.title}
+										name="title"
+										label="Title"
+										type="text"
+										fullWidth
+										variant="outlined"
+										onChange={handleInputChange}
+									/>
+								</Grid>
 
-							{/* Input Date End */}
-							<Grid item xs={6} md={6}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2} sx={{ minWidth: 205 }}>
-										<DatePicker label="Date End" value={dateEnd} onChange={handleDateEndChange} format="dddd, DD/MM/YYYY" />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
+								{/* Input Date Start */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2} sx={{ minWidth: 205 }}>
+											<DatePicker
+												label="Date Start"
+												value={moment(nuEvent.date_start)}
+												onChange={handleDateStartChange}
+												format="dddd, DD/MM/YYYY"
+												defaultValue={moment(dateStart)}
+											/>
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
 
-							{/* Input DateTime End */}
-							<Grid item xs={6} md={3}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2}>
-										<TimePicker label="Start Time" onChange={handleTimeStartChange} />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
-							<Grid item xs={6} md={3}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2}>
-										<TimePicker label="End Time" onChange={handleTimeEndChange} />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
+								{/* Input Start Time */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2}>
+											<TimePicker label="Start Time" onChange={handleTimeStartChange} value={moment(nuEvent.start_time)} />
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
 
-							{/* Input Repeat? */}
-							<Grid item xs={6} md={3}>
-								<Box>
-									<FormControl fullWidth>
-										<InputLabel id="demo-simple-select-label">Repeat?</InputLabel>
-										<Select labelId="demo-simple-select-label" id="demo-simple-select" value={repeat} label="Repeat" defaultValue="" onChange={handleRepeat}>
-											{REPEAT.map((repeat) => (
-												<MenuItem key={repeat.Id} value={repeat.Name}>
-													{repeat.Name}
-												</MenuItem>
-											))}
-										</Select>
-									</FormControl>
-								</Box>
-							</Grid>
+								{/* Input Date End */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2} sx={{ minWidth: 205 }}>
+											<DatePicker
+												label="Date End"
+												value={moment(nuEvent.date_end)}
+												onChange={handleDateEndChange}
+												format="dddd, DD/MM/YYYY"
+												defaultValue={moment(dateEnd)}
+											/>
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
 
-							{/* Input Person */}
-							<Grid item xs={6} md={3}>
-								<Box>
-									<FormControl fullWidth>
-										<InputLabel id="demo-simple-select-label">Person</InputLabel>
-										<Select
-											labelId="demo-simple-select-label"
-											id="demo-simple-select"
-											// value={nuEvent.person_id !== null ? String(nuEvent.person_id) : ""}
-											value={nuEvent.person_name}
-											label="Person"
-											defaultValue={nuEvent.person_id !== null ? String(nuEvent.person_id) : ""}
-											onChange={handlePerson}
-										>
-											{users.map((user) => (
-												<MenuItem key={user.id} value={user.id}>
-													{user.name}
-												</MenuItem>
-											))}
-										</Select>
-									</FormControl>
-								</Box>
+								{/* Input Time End */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2}>
+											<TimePicker label="End Time" onChange={handleTimeEndChange} value={moment(nuEvent.end_time)} />
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+
+								{/* Input Repeat? */}
+								<Grid item xs={6} md={3}>
+									<Box>
+										<FormControl fullWidth>
+											<InputLabel id="demo-simple-select-label">Repeat?</InputLabel>
+											<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={repeat}
+												label="Repeat"
+												defaultValue=""
+												onChange={handleRepeat}
+											>
+												{REPEAT.map((repeat) => (
+													<MenuItem key={repeat.Id} value={repeat.Name}>
+														{repeat.Name}
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									</Box>
+								</Grid>
+
+								{/* Input Person */}
+								<Grid item xs={6} md={3}>
+									<Box>
+										<FormControl fullWidth>
+											<InputLabel id="demo-simple-select-label">Person</InputLabel>
+											<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={nuEvent.person_id ?? ""}
+												label="Person"
+												onChange={handlePerson}
+											>
+												{users.map((user) => (
+													<MenuItem key={user.id} value={user.id}>
+														{user.name}
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									</Box>
+								</Grid>
 							</Grid>
-						</Grid>
-					</Box>
-				</DialogContent>
-			</Dialog>
-		</React.Fragment>
-	);
+						</Box>
+					</DialogContent>
+				</Dialog>
+			</React.Fragment>
+		);
+	} else {
+		return <CircularProgress color="secondary" />;
+	}
 };
 
 export default CalendarEventUpdate;
