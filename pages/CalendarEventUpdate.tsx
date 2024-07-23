@@ -63,34 +63,17 @@ interface Event {
 	start_time: Date | string;
 	end_time: Date | string;
 	is_repeat: string;
-	person_id: number | null;
+	person_id: string | number;
 	person_name: string;
 }
+
+// set param data edit as default value
 
 const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClose, id }) => {
 	const [selectedEventId, setSelectedEventId] = React.useState<number | null>(id);
 	const [isDialogOpen, setDialogOpen] = React.useState<boolean>(visible);
 	const [person, setPerson] = React.useState<string>("");
 	const [loading, setLoading] = React.useState<boolean>(false);
-	const [nuEvent, setNuEvent] = React.useState<Event>({
-		id: 0,
-		title: "",
-		date_start: "",
-		date_end: "",
-		start_time: "",
-		end_time: "",
-		is_repeat: "",
-		person_id: null,
-		person_name: "",
-	});
-
-	const [dateStart, setDateStart] = React.useState<Moment | null>(moment(new Date()));
-	const [dateEnd, setDateEnd] = React.useState<Moment | null>(moment(new Date()));
-	const [startTime, setStartTime] = React.useState<Moment | null>(moment(new Date()));
-	const [endTime, setEndTime] = React.useState<Moment | null>(moment(new Date()));
-	const [repeat, setRepeat] = React.useState<string>("");
-	const [filteredPerson, setFilteredPerson] = React.useState<string>("");
-	const [users, setUsers] = React.useState<Users[]>([]);
 
 	React.useEffect(() => {
 		const fetchEvents = async () => {
@@ -108,7 +91,7 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 					start_time: data.data.start_time,
 					end_time: data.data.end_time,
 					is_repeat: data.data.is_repeat,
-					person_id: data.data.person_id,
+					person_id: data.data.person_id || "",
 					person_name: data.data.person_name,
 				});
 
@@ -123,6 +106,25 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 			fetchEvents();
 		}
 	}, [id, visible]);
+	const [nuEvent, setNuEvent] = React.useState<Event>({
+		id: 0,
+		title: "",
+		date_start: "",
+		date_end: "",
+		start_time: "",
+		end_time: "",
+		is_repeat: "",
+		person_id: "",
+		person_name: "",
+	});
+
+	const [dateStart, setDateStart] = React.useState<Moment | null>(moment(new Date()));
+	const [dateEnd, setDateEnd] = React.useState<Moment | null>(moment(new Date()));
+	const [startTime, setStartTime] = React.useState<Moment | null>(moment(new Date()));
+	const [endTime, setEndTime] = React.useState<Moment | null>(moment(new Date()));
+	const [repeat, setRepeat] = React.useState<string>("");
+	const [filteredPerson, setFilteredPerson] = React.useState<string>("");
+	const [users, setUsers] = React.useState<Users[]>([]);
 
 	React.useEffect(() => {
 		const fetchUser = async () => {
@@ -193,8 +195,8 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 		});
 	};
 
-	const handlePerson = (event: React.ChangeEvent<{ value: unknown }>) => {
-		const selectedUserId = event.target.value as number;
+	const handlePerson = (event: SelectChangeEvent) => {
+		const selectedUserId = parseInt(event.target.value);
 		const selectedUser = users.find((user) => user.id === selectedUserId);
 
 		if (selectedUser) {
@@ -209,7 +211,6 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 	const handleRepeat = (event: SelectChangeEvent) => {
 		setRepeat(event.target.value as string);
 	};
-	console.log("Titles:", nuEvent.title);
 
 	if (loading) return <CircularProgress color="secondary" />;
 	return (
@@ -229,7 +230,6 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 					</Toolbar>
 				</AppBar>
 				<DialogContent>
-					<DialogContentText>Update your event ...</DialogContentText>
 					<Box sx={{ flexGrow: 1 }}>
 						<Grid container spacing={3}>
 							{/* Input Title  */}
@@ -305,6 +305,28 @@ const CalendarEventUpdate: React.FC<DeleteEventDialogProps> = ({ visible, onClos
 							</Grid>
 
 							{/* Input Person */}
+							<Grid item xs={6} md={3}>
+								<Box>
+									<FormControl fullWidth>
+										<InputLabel id="demo-simple-select-label">Person</InputLabel>
+										<Select
+											labelId="demo-simple-select-label"
+											id="demo-simple-select"
+											// value={nuEvent.person_id !== null ? String(nuEvent.person_id) : ""}
+											value={nuEvent.person_name}
+											label="Person"
+											defaultValue={nuEvent.person_id !== null ? String(nuEvent.person_id) : ""}
+											onChange={handlePerson}
+										>
+											{users.map((user) => (
+												<MenuItem key={user.id} value={user.id}>
+													{user.name}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Box>
+							</Grid>
 						</Grid>
 					</Box>
 				</DialogContent>

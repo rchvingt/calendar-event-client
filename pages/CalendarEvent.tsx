@@ -203,8 +203,8 @@ function CalendarEvent() {
 		setRepeat(event.target.value as string);
 	};
 
-	const handlePerson = (event: React.ChangeEvent<{ value: unknown }>) => {
-		const selectedUserId = event.target.value as number;
+	const handlePerson = (event: SelectChangeEvent) => {
+		const selectedUserId = parseInt(event.target.value);
 		const selectedUser = users.find((user) => user.id === selectedUserId);
 
 		if (selectedUser) {
@@ -266,7 +266,6 @@ function CalendarEvent() {
 	};
 
 	function handleDateClick(arg: { date: Date }) {
-		console.log("Date tapped" + arg.date);
 		setDateStart(moment(arg.date));
 		setDateEnd(moment(arg.date));
 		setModalVisible(!isModalVisible);
@@ -327,7 +326,7 @@ function CalendarEvent() {
 					throw new Error("Failed to delete the event");
 				}
 
-				// Perbarui daftar acara setelah penghapusan berhasil
+				// Fetch the updated list of events
 				fetch("http://localhost:3000/api/calendars/events")
 					.then((res) => res.json())
 					.then((data) => {
@@ -344,7 +343,7 @@ function CalendarEvent() {
 
 	if (isLoading) return <CircularProgress color="secondary" />;
 	if (!eventscalendar) return <p>No Event data</p>;
-	console.log("value of eventscalendar", eventscalendarID);
+
 	return (
 		<div className="grid grid-cols-10 min-h-screen p-4 gap-4">
 			{/* Sidebar */}
@@ -484,7 +483,7 @@ function CalendarEvent() {
 										<Select
 											labelId="demo-simple-select-label"
 											id="demo-simple-select"
-											value={nuEvent.person_id || ""}
+											value={nuEvent.person_id?.toString() ?? ""}
 											label="Person"
 											defaultValue=""
 											onChange={handlePerson}
@@ -547,6 +546,8 @@ function CalendarEvent() {
 					>
 						Delete
 					</Button>
+					{/* Next: retriev GET event/id */}
+					{/* sent them as data param through this */}
 					<Button
 						onClick={() => {
 							if (eventscalendarID) {
