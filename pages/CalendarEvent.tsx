@@ -333,9 +333,9 @@ function CalendarEvent() {
 	if (!eventscalendar) return <p>No Event data</p>;
 
 	return (
-		<div className="grid grid-cols-10 min-h-screen p-4 gap-4">
+		<div className="grid grid-cols-10 min-h-screen">
 			{/* Sidebar */}
-			<div className="col-span-2 bg-gray-100 p-4">
+			<div className="col-span-2 bg-white p-4 border border-r-slate-200">
 				<div className="mt-4">
 					<h3 className="font-bold mb-5">Search For Person</h3>
 
@@ -358,7 +358,7 @@ function CalendarEvent() {
 			</div>
 
 			{/* Calendar Event*/}
-			<div className="col-span-8">
+			<div className="col-span-8 p-4">
 				<FullCalendar
 					plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin, interactionPlugin]}
 					headerToolbar={{
