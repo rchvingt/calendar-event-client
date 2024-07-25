@@ -52,7 +52,7 @@ interface UpdateFormDialogProps {
 	visible: boolean;
 	onClose: () => void;
 	id: number | null;
-	setEventsCalendar: React.Dispatch<React.SetStateAction<Event[]>>;
+	setEventsCalendar: React.Dispatch<React.SetStateAction<EventData[]>>;
 	setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 

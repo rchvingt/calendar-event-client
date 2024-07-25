@@ -37,6 +37,7 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import CalendarEventUpdate from "./CalendarEventUpdate";
 
 import { INITIAL_EVENTS, createEventId } from "./event-utils";
+import Sidebar from "./Sidebar";
 
 const Transition = React.forwardRef(function Transition(
 	props: TransitionProps & {
@@ -329,33 +330,35 @@ function CalendarEvent() {
 		}
 	};
 
+	// handle filter by persons
+
+	const handleFilterByPersons = async (personIds: number[]) => {
+		try {
+			const response = await fetch("http://localhost:3000/api/calendars/persons", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ personIds }),
+			});
+			if (response.ok) {
+				const data = await response.json();
+				setEventsCalendar(data.data);
+			} else {
+				console.error("Failed to fetch events by persons");
+			}
+		} catch (error) {
+			console.error("Error fetching events by persons:", error);
+		}
+	};
+	console.log("events caled", eventscalendar);
 	if (isLoading) return <CircularProgress color="secondary" />;
 	if (!eventscalendar) return <p>No Event data</p>;
 
 	return (
 		<div className="grid grid-cols-10 min-h-screen">
 			{/* Sidebar */}
-			<div className="col-span-2 bg-white p-4 border border-r-slate-200">
-				<div className="mt-4">
-					<h3 className="font-bold mb-5">Search For Person</h3>
-
-					{/* filter user */}
-					<Grid item xs={6} md={6}>
-						<Box sx={{ minWidth: 120 }}>
-							<FormControl fullWidth>
-								<InputLabel id="demo-simple-select-label">Person</InputLabel>
-								<Select labelId="demo-simple-select-label" id="demo-simple-select" value={filteredPerson} defaultValue="" label="Person" onChange={handlePersonFilter}>
-									{users.map((user) => (
-										<MenuItem key={user.id} value={user.name}>
-											{user.name}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-						</Box>
-					</Grid>
-				</div>
-			</div>
+			<Sidebar onFilter={handleFilterByPersons} />
 
 			{/* Calendar Event*/}
 			<div className="col-span-8 p-4">
@@ -364,7 +367,7 @@ function CalendarEvent() {
 					headerToolbar={{
 						left: "prev,next today",
 						center: "title",
-						right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek",
+						right: "dayGridMonth,timeGridWeek,timeGridDay",
 					}}
 					events={eventscalendar}
 					eventBackgroundColor="#DF234C"
