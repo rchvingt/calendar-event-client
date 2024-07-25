@@ -1,15 +1,29 @@
+import * as React from "react";
+import { Box, PaletteMode } from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CalendarEvent from "./CalendarEvent";
-CalendarEvent;
+import getLPTheme from "./getLPTheme";
 
 export default function Home() {
+	const [mode, setMode] = React.useState<PaletteMode>("light");
+	const [showCustomTheme, setShowCustomTheme] = React.useState(true);
+	const LPtheme = createTheme(getLPTheme(mode));
+	const defaultTheme = createTheme({ palette: { mode } });
+
 	return (
-		<>
-			<main>
-				<nav className="flex justify-between mb-4 border-b border-orange-100 p-4">
-					<h1 className="font-bold text-2xl text-gray-700">Calendar Event</h1>
-				</nav>
+		<ThemeProvider theme={showCustomTheme ? LPtheme : defaultTheme}>
+			<CssBaseline />
+			<Box
+				sx={{
+					width: "100vw",
+					height: "100vh",
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
 				<CalendarEvent />
-			</main>
-		</>
+			</Box>
+		</ThemeProvider>
 	);
 }

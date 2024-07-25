@@ -40,19 +40,17 @@ interface Event {
 	person_name: string;
 }
 
-// Structur Event Data
 interface EventData {
 	id: string;
 	title: string;
 	start: Date;
 	end: Date;
 }
-
 interface UpdateFormDialogProps {
 	visible: boolean;
 	onClose: () => void;
 	id: number | null;
-	setEventsCalendar: React.Dispatch<React.SetStateAction<Event[]>>;
+	setEventsCalendar: React.Dispatch<React.SetStateAction<EventData[]>>;
 	setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -106,7 +104,6 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 				const data = await response.json();
 				setDe(data.data);
 				// console.log(data.data);
-				// setEventData(data.data);
 				setNuEvent({
 					id: data.data.id,
 					title: data.data.title,

@@ -9,6 +9,8 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import multiMonthPlugin from "@fullcalendar/multimonth";
 
+import Image from "next/image";
+
 // component UI
 import {
 	CircularProgress,
@@ -27,6 +29,8 @@ import {
 	MenuItem,
 	IconButton,
 	Slide,
+	Typography,
+	Container,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { TransitionProps } from "@mui/material/transitions";
@@ -34,9 +38,11 @@ import { TransitionProps } from "@mui/material/transitions";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import CalendarEventUpdate from "./CalendarEventUpdate";
 
-import { INITIAL_EVENTS, createEventId } from "./event-utils";
+import CalendarEventUpdate from "./CalendarEventUpdate";
+import CalendarEventSearch from "./CalendarEventSearch";
+import CalendarBar from "./CalendarBar";
+import CalendarFilter from "./CalendarFilter";
 
 const Transition = React.forwardRef(function Transition(
 	props: TransitionProps & {
@@ -333,52 +339,33 @@ function CalendarEvent() {
 	if (!eventscalendar) return <p>No Event data</p>;
 
 	return (
-		<div className="grid grid-cols-10 min-h-screen p-4 gap-4">
-			{/* Sidebar */}
-			<div className="col-span-2 bg-gray-100 p-4">
-				<div className="mt-4">
-					<h3 className="font-bold mb-5">Search For Person</h3>
-
-					{/* filter user */}
-					<Grid item xs={6} md={6}>
-						<Box sx={{ minWidth: 120 }}>
-							<FormControl fullWidth>
-								<InputLabel id="demo-simple-select-label">Person</InputLabel>
-								<Select labelId="demo-simple-select-label" id="demo-simple-select" value={filteredPerson} defaultValue="" label="Person" onChange={handlePersonFilter}>
-									{users.map((user) => (
-										<MenuItem key={user.id} value={user.name}>
-											{user.name}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-						</Box>
-					</Grid>
-				</div>
-			</div>
+		<Box sx={{ bgcolor: "background.default" }}>
+			<CalendarBar />
+			<CalendarFilter />
 
 			{/* Calendar Event*/}
-			<div className="col-span-8">
-				<FullCalendar
-					plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin, interactionPlugin]}
-					headerToolbar={{
-						left: "prev,next today",
-						center: "title",
-						right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek",
-					}}
-					events={eventscalendar}
-					eventBackgroundColor="#DF234C"
-					eventBorderColor="#F0778F"
-					nowIndicator={true}
-					editable={false}
-					droppable={false}
-					selectable={false}
-					selectMirror={true}
-					dateClick={handleDateClick}
-					eventClick={handleEventClick}
-				/>
-			</div>
-
+			<Container>
+				<Box style={{ width: "100%" }}>
+					<FullCalendar
+						plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin]}
+						headerToolbar={{
+							left: "prev,next today",
+							center: "title",
+							right: "dayGridMonth,timeGridWeek,timeGridDay",
+						}}
+						events={eventscalendar}
+						eventBackgroundColor="#DF234C"
+						eventBorderColor="#F0778F"
+						nowIndicator={true}
+						editable={false}
+						droppable={false}
+						selectable={false}
+						selectMirror={true}
+						dateClick={handleDateClick}
+						eventClick={handleEventClick}
+					/>
+				</Box>
+			</Container>
 			{/* Form Event Calendar */}
 			<Dialog
 				open={isModalVisible}
@@ -554,7 +541,7 @@ function CalendarEvent() {
 
 			{/* Edit Event Calendar */}
 			<CalendarEventUpdate visible={isEdit} onClose={closeDeleteDialog} id={eventscalendarID} setEventsCalendar={setEventsCalendar} setLoading={setLoading} />
-		</div>
+		</Box>
 	);
 }
 
