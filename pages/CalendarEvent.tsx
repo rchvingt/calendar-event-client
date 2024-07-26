@@ -138,7 +138,14 @@ function CalendarEvent() {
 			try {
 				const response = await fetch("http://localhost:3000/api/calendars/events");
 				const data = await response.json();
-				setEventsCalendar(data.data);
+
+				const utcf = data.data.map((event: { start: string; end: string }) => ({
+					...event,
+					start: moment.utc(event.start).local().format("YYYY-MM-DDTHH:mm:ss"),
+					end: moment.utc(event.end).local().format("YYYY-MM-DDTHH:mm:ss"),
+				}));
+
+				setEventsCalendar(utcf);
 				setLoading(false);
 			} catch (error) {
 				console.error("Error fetching events:", error);
