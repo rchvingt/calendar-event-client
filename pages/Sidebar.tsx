@@ -34,7 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onFilter }) => {
 	};
 	useEffect(() => {
 		// Fetch users from API
-		fetch("http://localhost:3000/api/calendars/users")
+		fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/users`)
 			.then((response) => response.json())
 			.then((data) => setUsers(data.data))
 			.catch((error) => console.error("Error fetching users:", error));

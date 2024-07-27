@@ -36,7 +36,6 @@ import { DatePicker, TimePicker, LocalizationProvider } from "@mui/x-date-picker
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import CalendarEventUpdate from "./CalendarEventUpdate";
 
-import { INITIAL_EVENTS, createEventId } from "./event-utils";
 import Sidebar from "./Sidebar";
 
 const Transition = React.forwardRef(function Transition(
@@ -136,7 +135,7 @@ function CalendarEvent() {
 	useEffect(() => {
 		const fetchEvents = async () => {
 			try {
-				const response = await fetch("http://localhost:3000/api/calendars/events");
+				const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`);
 				const data = await response.json();
 
 				const utcf = data.data.map((event: { start: string; end: string }) => ({
@@ -158,7 +157,7 @@ function CalendarEvent() {
 
 	// Retrieve Users Data
 	useEffect(() => {
-		fetch("http://localhost:3000/api/calendars/users")
+		fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/users`)
 			.then((res) => res.json())
 			.then((data) => {
 				setUsers(data.data);
@@ -228,7 +227,7 @@ function CalendarEvent() {
 		// console.log(formData);
 		event.preventDefault();
 		try {
-			const response = await fetch("http://localhost:3000/api/calendars", {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -238,7 +237,7 @@ function CalendarEvent() {
 			if (response.ok) {
 				alert("Event submitted successfully");
 				// Fetch the updated list of events
-				fetch("http://localhost:3000/api/calendars/events")
+				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/calendars/events`)
 					.then((res) => res.json())
 					.then((data) => {
 						setEventsCalendar(data.data);
@@ -311,7 +310,7 @@ function CalendarEvent() {
 	const handleDelete = async (id: number): Promise<void> => {
 		if (confirm("Are you sure you want to delete this event?")) {
 			try {
-				const response = await fetch(`http://localhost:3000/api/calendars/${id}`, {
+				const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/${id}`, {
 					method: "DELETE",
 					headers: {
 						"Content-Type": "application/json",
@@ -323,7 +322,7 @@ function CalendarEvent() {
 				}
 
 				// Fetch the updated list of events
-				fetch("http://localhost:3000/api/calendars/events")
+				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
 					.then((res) => res.json())
 					.then((data) => {
 						setEventsCalendar(data.data);
@@ -341,7 +340,7 @@ function CalendarEvent() {
 
 	const handleFilterByPersons = async (personIds: number[]) => {
 		try {
-			const response = await fetch("http://localhost:3000/api/calendars/persons", {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/calendars/persons`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -358,7 +357,7 @@ function CalendarEvent() {
 			console.error("Error fetching events by persons:", error);
 		}
 	};
-	console.log("events caled", eventscalendar);
+	// console.log("events caled", eventscalendar);
 	if (isLoading) return <CircularProgress color="secondary" />;
 	if (!eventscalendar) return <p>No Event data</p>;
 

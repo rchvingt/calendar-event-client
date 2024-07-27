@@ -10,7 +10,7 @@ const SearchResults: React.FC = () => {
 	useEffect(() => {
 		const fetchSearchResults = async () => {
 			try {
-				const response = await fetch(`http://localhost:3000/api/calendars?title=${keyword}`);
+				const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars?title=${keyword}`);
 				if (response.ok) {
 					const data = await response.json();
 					setSearchResults(data.data);

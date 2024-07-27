@@ -102,7 +102,7 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 		const fetchEvents = async () => {
 			setLoadingLocal(true);
 			try {
-				const response = await fetch(`http://localhost:3000/api/calendars/${id}`);
+				const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/${id}`);
 				const data = await response.json();
 				setDe(data.data);
 				// console.log(data.data);
@@ -143,7 +143,7 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 		const fetchUser = async () => {
 			setLoadingLocal(true);
 			try {
-				const response = await fetch(`http://localhost:3000/api/calendars/users`);
+				const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/users`);
 				const data = await response.json();
 				// console.log(data.data);
 				setUsers(data.data);
@@ -246,7 +246,7 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 		// console.log(formData);
 		event.preventDefault();
 		try {
-			const response = await fetch(`http://localhost:3000/api/calendars/${id}`, {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/${id}`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
@@ -257,7 +257,7 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 				alert("Event submitted successfully");
 				onClose();
 				// Fetch the updated list of events
-				fetch("http://localhost:3000/api/calendars/events")
+				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
 					.then((res) => res.json())
 					.then((data) => {
 						setEventsCalendar(data.data);
