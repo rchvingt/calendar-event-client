@@ -237,7 +237,7 @@ function CalendarEvent() {
 			if (response.ok) {
 				alert("Event submitted successfully");
 				// Fetch the updated list of events
-				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/calendars/events`)
+				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
 					.then((res) => res.json())
 					.then((data) => {
 						setEventsCalendar(data.data);
@@ -340,7 +340,7 @@ function CalendarEvent() {
 
 	const handleFilterByPersons = async (personIds: number[]) => {
 		try {
-			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/calendars/persons`, {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/persons`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
