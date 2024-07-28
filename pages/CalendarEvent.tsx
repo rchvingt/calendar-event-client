@@ -27,6 +27,8 @@ import {
 	MenuItem,
 	IconButton,
 	Slide,
+	Alert,
+	Collapse,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { TransitionProps } from "@mui/material/transitions";
@@ -119,7 +121,11 @@ function CalendarEvent() {
 
 	const [titleEvent, setTitleEvent] = useState<string>("");
 
-	const [isEdit, setEdit] = React.useState(false);
+	const [isEdit, setEdit] = useState(false);
+
+	// alert
+	const [alertOpen, setAlertOpen] = useState(false);
+	const [alertMessage, setAlertMessage] = useState("");
 
 	const handleClickEdit = () => {
 		setModalVisibleDelete(!isModalVisibleDelete);
@@ -210,10 +216,6 @@ function CalendarEvent() {
 		}
 	};
 
-	const handlePersonFilter = (event: SelectChangeEvent) => {
-		setFilteredPerson(event.target.value as string);
-	};
-
 	// handle submit new event
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		const formData = {
@@ -234,8 +236,18 @@ function CalendarEvent() {
 				},
 				body: JSON.stringify(formData),
 			});
+
 			if (response.ok) {
-				alert("Event submitted successfully");
+				setAlertOpen(!alertOpen);
+				const rjson = await response.json();
+				// console.log(rjson);
+				setAlertMessage(rjson.message);
+				setNuEvent({
+					...nuEvent,
+					person_id: null,
+					person_name: "",
+				});
+
 				// Fetch the updated list of events
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
 					.then((res) => res.json())
@@ -320,14 +332,16 @@ function CalendarEvent() {
 				if (!response.ok) {
 					throw new Error("Failed to delete the event");
 				}
-
+				setAlertOpen(!alertOpen);
+				const rjson = await response.json();
+				console.log("rjson delete", rjson);
+				setAlertMessage(rjson.message);
 				// Fetch the updated list of events
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
 					.then((res) => res.json())
 					.then((data) => {
 						setEventsCalendar(data.data);
 						setLoading(false);
-						alert("Event deleted successfully");
 					});
 			} catch (error) {
 				console.error("Error deleting event:", error);
@@ -362,208 +376,238 @@ function CalendarEvent() {
 	if (!eventscalendar) return <p>No Event data</p>;
 
 	return (
-		<div className="grid grid-cols-10 min-h-screen">
-			{/* Sidebar */}
-			<Sidebar onFilter={handleFilterByPersons} />
+		<>
+			<Box sx={{ width: "100%" }}>
+				<Collapse in={alertOpen}>
+					<Alert
+						action={
+							<IconButton
+								aria-label="close"
+								color="inherit"
+								size="small"
+								onClick={() => {
+									setAlertOpen(!alertOpen);
+								}}
+							>
+								<CloseIcon fontSize="inherit" />
+							</IconButton>
+						}
+						sx={{ mb: 2 }}
+					>
+						{alertMessage}
+					</Alert>
+				</Collapse>
+			</Box>
+			<div className="grid grid-cols-10 min-h-screen">
+				{/* Sidebar */}
+				<Sidebar onFilter={handleFilterByPersons} />
 
-			{/* Calendar Event*/}
-			<div className="col-span-8 p-4">
-				<FullCalendar
-					plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin, interactionPlugin]}
-					headerToolbar={{
-						left: "prev,next today",
-						center: "title",
-						right: "dayGridMonth,timeGridWeek,timeGridDay",
-					}}
-					events={eventscalendar}
-					eventBackgroundColor="#DF234C"
-					eventBorderColor="#F0778F"
-					nowIndicator={true}
-					editable={false}
-					droppable={false}
-					selectable={false}
-					selectMirror={true}
-					dateClick={handleDateClick}
-					eventClick={handleEventClick}
-				/>
-			</div>
+				{/* Calendar Event*/}
+				<div className="col-span-8 p-4">
+					<FullCalendar
+						plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin, multiMonthPlugin, listPlugin, interactionPlugin]}
+						headerToolbar={{
+							left: "prev,next today",
+							center: "title",
+							right: "dayGridMonth,timeGridWeek,timeGridDay",
+						}}
+						events={eventscalendar}
+						eventBackgroundColor="#DF234C"
+						eventBorderColor="#F0778F"
+						nowIndicator={true}
+						editable={false}
+						droppable={false}
+						selectable={false}
+						selectMirror={true}
+						dateClick={handleDateClick}
+						eventClick={handleEventClick}
+					/>
+				</div>
 
-			{/* Form Event Calendar */}
-			<Dialog
-				open={isModalVisible}
-				onClose={handleCloseModal}
-				maxWidth={"md"}
-				PaperProps={{
-					component: "form",
-					onSubmit: handleSubmit,
-				}}
-			>
-				<DialogTitle>Add Event</DialogTitle>
-				<DialogContent>
-					<Box sx={{ flexGrow: 1 }}>
-						<Grid container spacing={3}>
-							{/* Input Title  */}
-							<Grid item xs={12}>
-								<TextField
-									autoFocus
-									required
-									margin="dense"
-									id="title"
-									name="title"
-									label="Title"
-									type="text"
-									fullWidth
-									variant="outlined"
-									onChange={handleInputChange}
-								/>
-							</Grid>
-
-							{/* Input Date Start */}
-							<Grid item xs={6} md={6}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2} sx={{ minWidth: 205 }}>
-										<DatePicker
-											label="Date Start"
-											value={dateStart}
-											onChange={handleDateStartChange}
-											format="dddd, DD/MM/YYYY"
-											defaultValue={moment(dateStart)}
-										/>
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
-
-							{/* Input Time Start */}
-							<Grid item xs={6} md={6}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2}>
-										<TimePicker label="Start Time" onChange={handleTimeStartChange} />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
-
-							{/* Input Date End */}
-							<Grid item xs={6} md={6}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2} sx={{ minWidth: 205 }}>
-										<DatePicker label="Date End" value={dateEnd} onChange={handleDateEndChange} format="dddd, DD/MM/YYYY" />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
-
-							{/* Input Time End */}
-							<Grid item xs={6} md={6}>
-								<LocalizationProvider dateAdapter={AdapterMoment}>
-									<Stack spacing={2}>
-										<TimePicker label="End Time" onChange={handleTimeEndChange} />
-									</Stack>
-								</LocalizationProvider>
-							</Grid>
-
-							{/* Input Repeat? */}
-							<Grid item xs={6} md={3}>
-								<Box>
-									<FormControl fullWidth>
-										<InputLabel id="demo-simple-select-label">Repeat?</InputLabel>
-										<Select labelId="demo-simple-select-label" id="demo-simple-select" value={repeat} label="Repeat" defaultValue="" onChange={handleRepeat}>
-											{REPEAT.map((repeat) => (
-												<MenuItem key={repeat.Id} value={repeat.Name}>
-													{repeat.Name}
-												</MenuItem>
-											))}
-										</Select>
-									</FormControl>
-								</Box>
-							</Grid>
-
-							{/* Input Person */}
-							<Grid item xs={6} md={3}>
-								<Box>
-									<FormControl fullWidth>
-										<InputLabel id="demo-simple-select-label">Person</InputLabel>
-										<Select
-											labelId="demo-simple-select-label"
-											id="demo-simple-select"
-											value={nuEvent.person_id?.toString() ?? ""}
-											label="Person"
-											defaultValue=""
-											onChange={handlePerson}
-										>
-											{users.map((user) => (
-												<MenuItem key={user.id} value={user.id}>
-													{user.name}
-												</MenuItem>
-											))}
-										</Select>
-									</FormControl>
-								</Box>
-							</Grid>
-						</Grid>
-					</Box>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleCloseModal}>Cancel</Button>
-					<Button type="submit">Save</Button>
-				</DialogActions>
-			</Dialog>
-
-			{/* Confirmation Dialog Event Click*/}
-			<Dialog
-				open={isModalVisibleDelete}
-				onClose={() => {
-					setModalVisibleDelete(!isModalVisibleDelete);
-				}}
-				fullWidth
-				aria-labelledby="alert-dialog-title"
-				aria-describedby="alert-dialog-description"
-			>
-				<DialogTitle id="alert-dialog-title">{titleEvent}</DialogTitle>
-				<IconButton
-					aria-label="close"
-					autoFocus
-					onClick={() => {
-						setModalVisibleDelete(!isModalVisibleDelete);
-					}}
-					sx={{
-						position: "absolute",
-						right: 8,
-						top: 8,
-						color: (theme) => theme.palette.grey[500],
+				{/* Form Event Calendar */}
+				<Dialog
+					open={isModalVisible}
+					onClose={handleCloseModal}
+					maxWidth={"md"}
+					PaperProps={{
+						component: "form",
+						onSubmit: handleSubmit,
 					}}
 				>
-					<CloseIcon />
-				</IconButton>
-				<DialogContent>
-					<DialogContentText id="alert-dialog-description">{"What actions would you like to perform?"}</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button
+					<DialogTitle>Add Event</DialogTitle>
+					<DialogContent>
+						<Box sx={{ flexGrow: 1 }}>
+							<Grid container spacing={3}>
+								{/* Input Title  */}
+								<Grid item xs={12}>
+									<TextField
+										autoFocus
+										required
+										margin="dense"
+										id="title"
+										name="title"
+										label="Title"
+										type="text"
+										fullWidth
+										variant="outlined"
+										onChange={handleInputChange}
+									/>
+								</Grid>
+
+								{/* Input Date Start */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2} sx={{ minWidth: 205 }}>
+											<DatePicker
+												label="Date Start"
+												value={dateStart}
+												onChange={handleDateStartChange}
+												format="dddd, DD/MM/YYYY"
+												defaultValue={moment(dateStart)}
+											/>
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+
+								{/* Input Time Start */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2}>
+											<TimePicker label="Start Time" onChange={handleTimeStartChange} />
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+
+								{/* Input Date End */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2} sx={{ minWidth: 205 }}>
+											<DatePicker label="Date End" value={dateEnd} onChange={handleDateEndChange} format="dddd, DD/MM/YYYY" />
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+
+								{/* Input Time End */}
+								<Grid item xs={6} md={6}>
+									<LocalizationProvider dateAdapter={AdapterMoment}>
+										<Stack spacing={2}>
+											<TimePicker label="End Time" onChange={handleTimeEndChange} />
+										</Stack>
+									</LocalizationProvider>
+								</Grid>
+
+								{/* Input Repeat? */}
+								<Grid item xs={6} md={3}>
+									<Box>
+										<FormControl fullWidth>
+											<InputLabel id="demo-simple-select-label">Repeat?</InputLabel>
+											<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={repeat}
+												label="Repeat"
+												defaultValue=""
+												onChange={handleRepeat}
+											>
+												{REPEAT.map((repeat) => (
+													<MenuItem key={repeat.Id} value={repeat.Name}>
+														{repeat.Name}
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									</Box>
+								</Grid>
+
+								{/* Input Person */}
+								<Grid item xs={6} md={3}>
+									<Box>
+										<FormControl fullWidth>
+											<InputLabel id="demo-simple-select-label">Person</InputLabel>
+											<Select
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												value={nuEvent.person_id?.toString() ?? ""}
+												label="Person"
+												defaultValue=""
+												onChange={handlePerson}
+											>
+												{users.map((user) => (
+													<MenuItem key={user.id} value={user.id}>
+														{user.name}
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									</Box>
+								</Grid>
+							</Grid>
+						</Box>
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={handleCloseModal}>Cancel</Button>
+						<Button type="submit">Save</Button>
+					</DialogActions>
+				</Dialog>
+
+				{/* Confirmation Dialog Event Click*/}
+				<Dialog
+					open={isModalVisibleDelete}
+					onClose={() => {
+						setModalVisibleDelete(!isModalVisibleDelete);
+					}}
+					fullWidth
+					aria-labelledby="alert-dialog-title"
+					aria-describedby="alert-dialog-description"
+				>
+					<DialogTitle id="alert-dialog-title">{titleEvent}</DialogTitle>
+					<IconButton
+						aria-label="close"
+						autoFocus
 						onClick={() => {
-							if (eventscalendarID) {
-								handleDelete(eventscalendarID);
-								setModalVisibleDelete(!isModalVisibleDelete);
-							}
+							setModalVisibleDelete(!isModalVisibleDelete);
+						}}
+						sx={{
+							position: "absolute",
+							right: 8,
+							top: 8,
+							color: (theme) => theme.palette.grey[500],
 						}}
 					>
-						Delete
-					</Button>
+						<CloseIcon />
+					</IconButton>
+					<DialogContent>
+						<DialogContentText id="alert-dialog-description">{"What actions would you like to perform?"}</DialogContentText>
+					</DialogContent>
+					<DialogActions>
+						<Button
+							onClick={() => {
+								if (eventscalendarID) {
+									handleDelete(eventscalendarID);
+									setModalVisibleDelete(!isModalVisibleDelete);
+								}
+							}}
+						>
+							Delete
+						</Button>
 
-					<Button
-						onClick={() => {
-							if (eventscalendarID) {
-								handleClickEdit();
-								setModalVisibleDelete(!isModalVisibleDelete);
-							}
-						}}
-					>
-						Edit
-					</Button>
-				</DialogActions>
-			</Dialog>
+						<Button
+							onClick={() => {
+								if (eventscalendarID) {
+									handleClickEdit();
+									setModalVisibleDelete(!isModalVisibleDelete);
+								}
+							}}
+						>
+							Edit
+						</Button>
+					</DialogActions>
+				</Dialog>
 
-			{/* Edit Event Calendar */}
-			<CalendarEventUpdate visible={isEdit} onClose={closeDeleteDialog} id={eventscalendarID} setEventsCalendar={setEventsCalendar} setLoading={setLoading} />
-		</div>
+				{/* Edit Event Calendar */}
+				<CalendarEventUpdate visible={isEdit} onClose={closeDeleteDialog} id={eventscalendarID} setEventsCalendar={setEventsCalendar} setLoading={setLoading} />
+			</div>
+		</>
 	);
 }
 
