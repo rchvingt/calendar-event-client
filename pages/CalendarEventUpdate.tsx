@@ -12,7 +12,7 @@ import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import Slide from "@mui/material/Slide";
 import { TransitionProps } from "@mui/material/transitions";
-import { Box, CircularProgress, DialogContent, DialogContentText, FormControl, Grid, InputLabel, MenuItem, Stack, TextField } from "@mui/material";
+import { Box, CircularProgress, DialogContent, DialogContentText, FormControl, Grid, InputLabel, MenuItem, Stack, TextField, Alert, Collapse } from "@mui/material";
 import { LocalizationProvider, DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment, { Moment } from "moment";
@@ -78,7 +78,7 @@ const REPEAT = [
 	},
 ];
 
-// set param data edit as default value
+type AlertType = "error" | "info" | "success" | "warning";
 
 const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose, id, setEventsCalendar, setLoading }) => {
 	const [selectedEventId, setSelectedEventId] = React.useState<number | null>(id);
@@ -138,6 +138,11 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 	const [repeat, setRepeat] = React.useState<string>("");
 	const [filteredPerson, setFilteredPerson] = React.useState<string>("");
 	const [users, setUsers] = React.useState<Users[]>([]);
+
+	// alert
+	const [alertOpen, setAlertOpen] = React.useState(false);
+	const [alertMessage, setAlertMessage] = React.useState("");
+	const [alertType, setAlertType] = React.useState<AlertType>("success");
 
 	React.useEffect(() => {
 		const fetchUser = async () => {
@@ -207,19 +212,6 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 		});
 	};
 
-	const handlePersonX = (event: SelectChangeEvent) => {
-		const selectedUserId = parseInt(event.target.value);
-		const selectedUser = users.find((user) => user.id === selectedUserId);
-
-		if (selectedUser) {
-			setNuEvent({
-				...nuEvent,
-				person_id: selectedUser.id,
-				person_name: selectedUser.name,
-			});
-		}
-	};
-
 	const handlePerson = (event: SelectChangeEvent<number>) => {
 		const selectedUserId = event.target.value as number;
 		setNuEvent((prevEvent) => ({
@@ -235,6 +227,7 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 
 	// handle submit update event
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
 		const formData = {
 			title: nuEvent.title,
 			date_start: moment(nuEvent.date_start).format("YYYY-MM-DD"),
@@ -243,8 +236,8 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 			end_time: moment(nuEvent.end_time).format("HH:mm:ss"),
 			user_id: nuEvent.person_id,
 		};
-		// console.log(formData);
-		event.preventDefault();
+		console.log(formData);
+
 		try {
 			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/${id}`, {
 				method: "PUT",
@@ -263,8 +256,27 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 						setEventsCalendar(data.data);
 						setLoading(false);
 					});
+
+				// Reset the form
+				setNuEvent({
+					...nuEvent,
+					id: 0,
+					title: "",
+					date_start: "",
+					date_end: "",
+					start_time: "",
+					end_time: "",
+					is_repeat: "",
+					person_id: null,
+					person_name: "",
+				});
+				setAlertOpen(false);
 			} else {
-				console.error("Failed to submit event");
+				const errorData = await response.json();
+				setAlertMessage(errorData.message || "Error creating event");
+				setAlertType("error");
+				setAlertOpen(!alertOpen);
+				return;
 			}
 		} catch (error) {
 			console.error("Error submitting event:", error);
@@ -301,6 +313,26 @@ const CalendarEventUpdate: React.FC<UpdateFormDialogProps> = ({ visible, onClose
 					</AppBar>
 					<DialogContent>
 						<Box sx={{ flexGrow: 1 }}>
+							<Collapse in={alertOpen}>
+								<Alert
+									severity={alertType}
+									action={
+										<IconButton
+											aria-label="close"
+											color="inherit"
+											size="small"
+											onClick={() => {
+												setAlertOpen(!alertOpen);
+											}}
+										>
+											<CloseIcon fontSize="inherit" />
+										</IconButton>
+									}
+									sx={{ mb: 2 }}
+								>
+									{alertMessage}
+								</Alert>
+							</Collapse>
 							<Grid container spacing={3}>
 								{/* Input Title  */}
 								<Grid item xs={12}>

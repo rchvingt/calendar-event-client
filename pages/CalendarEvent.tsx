@@ -90,7 +90,7 @@ const REPEAT = [
 		Name: "Weekly",
 	},
 ];
-
+type AlertType = "error" | "info" | "success" | "warning";
 function CalendarEvent() {
 	const [eventscalendar, setEventsCalendar] = useState<EventData[]>([]);
 	const [users, setUsers] = useState<Users[]>([]);
@@ -117,7 +117,6 @@ function CalendarEvent() {
 	const [endTime, setEndTime] = useState<Moment | null>(moment(new Date()));
 	const [repeat, setRepeat] = useState<string>("");
 	const [person, setPerson] = useState<string>("");
-	const [filteredPerson, setFilteredPerson] = useState<string>("");
 
 	const [titleEvent, setTitleEvent] = useState<string>("");
 
@@ -126,6 +125,7 @@ function CalendarEvent() {
 	// alert
 	const [alertOpen, setAlertOpen] = useState(false);
 	const [alertMessage, setAlertMessage] = useState("");
+	const [alertType, setAlertType] = useState<AlertType>("success");
 
 	const handleClickEdit = () => {
 		setModalVisibleDelete(!isModalVisibleDelete);
@@ -218,6 +218,8 @@ function CalendarEvent() {
 
 	// handle submit new event
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+
 		const formData = {
 			title: nuEvent.title,
 			date_start: nuEvent.date_start || moment(dateStart).format("YYYY-MM-DD"),
@@ -226,8 +228,7 @@ function CalendarEvent() {
 			end_time: nuEvent.end_time,
 			user_id: nuEvent.person_id,
 		};
-		// console.log(formData);
-		event.preventDefault();
+
 		try {
 			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars`, {
 				method: "POST",
@@ -237,31 +238,48 @@ function CalendarEvent() {
 				body: JSON.stringify(formData),
 			});
 
-			if (response.ok) {
-				setAlertOpen(!alertOpen);
-				const rjson = await response.json();
-				// console.log(rjson);
-				setAlertMessage(rjson.message);
-				setNuEvent({
-					...nuEvent,
-					person_id: null,
-					person_name: "",
-				});
-
-				// Fetch the updated list of events
-				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
-					.then((res) => res.json())
-					.then((data) => {
-						setEventsCalendar(data.data);
-						setLoading(false);
-					});
-			} else {
-				console.error("Failed to submit event");
+			if (!response.ok) {
+				const errorData = await response.json();
+				setAlertMessage(errorData.message || "Error creating event");
+				setAlertType("error");
+				setAlertOpen(true);
+				return;
 			}
-		} catch (error) {
-			console.error("Error submitting event:", error);
+
+			const sccData = await response.json();
+			setAlertMessage(sccData.message);
+			setAlertType("success");
+			setAlertOpen(true);
+
+			setNuEvent({
+				...nuEvent,
+				person_id: null,
+				person_name: "",
+			});
+
+			// Fetch the updated list of events
+			try {
+				const eventsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`);
+				if (!eventsResponse.ok) {
+					throw new Error("Failed to fetch events");
+				}
+
+				const data = await eventsResponse.json();
+				setEventsCalendar(data.data);
+			} catch (fetchError) {
+				console.error("Error fetching events:", fetchError);
+				setAlertType("error");
+				setAlertMessage("Failed to fetch updated events");
+				setAlertOpen(true);
+			}
+		} catch (submitError) {
+			console.error("Error submitting event:", submitError);
+			setAlertType("error");
+			setAlertMessage("Failed submitting event:");
+			setAlertOpen(true);
+		} finally {
+			setModalVisible(!isModalVisible);
 		}
-		setModalVisible(!isModalVisible);
 	};
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,7 +321,7 @@ function CalendarEvent() {
 			setStartTime(date);
 			setNuEvent({
 				...nuEvent,
-				start_time: moment(date).format("LT"),
+				start_time: moment(date).format("hh:mm:ss a"),
 			});
 		}
 	};
@@ -313,7 +331,7 @@ function CalendarEvent() {
 			setEndTime(date);
 			setNuEvent({
 				...nuEvent,
-				end_time: moment(date).format("LT"),
+				end_time: moment(date).format("hh:mm:ss a"),
 			});
 		}
 	};
@@ -332,10 +350,11 @@ function CalendarEvent() {
 				if (!response.ok) {
 					throw new Error("Failed to delete the event");
 				}
-				setAlertOpen(!alertOpen);
+				setAlertOpen(true);
+				setAlertType("success");
 				const rjson = await response.json();
-				console.log("rjson delete", rjson);
 				setAlertMessage(rjson.message);
+
 				// Fetch the updated list of events
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/events`)
 					.then((res) => res.json())
@@ -344,14 +363,15 @@ function CalendarEvent() {
 						setLoading(false);
 					});
 			} catch (error) {
+				setAlertOpen(true);
+				setAlertType("error");
 				console.error("Error deleting event:", error);
-				alert("Failed to delete the event");
+				setAlertMessage("Failed to delete the event");
 			}
 		}
 	};
 
 	// handle filter by persons
-
 	const handleFilterByPersons = async (personIds: number[]) => {
 		try {
 			const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/calendars/persons`, {
@@ -371,6 +391,7 @@ function CalendarEvent() {
 			console.error("Error fetching events by persons:", error);
 		}
 	};
+
 	// console.log("events caled", eventscalendar);
 	if (isLoading) return <CircularProgress color="secondary" />;
 	if (!eventscalendar) return <p>No Event data</p>;
@@ -380,6 +401,7 @@ function CalendarEvent() {
 			<Box sx={{ width: "100%" }}>
 				<Collapse in={alertOpen}>
 					<Alert
+						severity={alertType}
 						action={
 							<IconButton
 								aria-label="close"
@@ -590,7 +612,6 @@ function CalendarEvent() {
 						>
 							Delete
 						</Button>
-
 						<Button
 							onClick={() => {
 								if (eventscalendarID) {
