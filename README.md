@@ -32,4 +32,19 @@ API routes can be accessed on [http://localhost:3000/api/calendars](http://local
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
-## Learn More
+## Demo
+
+The project is now live and can be accessed at the following URL:
+
+[Calendar Event](https://calendar-event-client.vercel.app)
+
+## Features
+
+This project includes a simple calendar event feature allowing users to create, update, and manage events seamlessly. Key functionalities include:
+
+    •	Event Creation: Users can create events with specific date and time start, date and time end and assign the event to person.
+    •	Event Update: Events can be updated with new details.
+    •	Event Clash Check: Before saving or updating events, the system checks for potential time conflicts with existing events, ensuring no overlap.
+    •   Calendar view: monthly, weekly, daily
+    •   Input keyboard to filter events base on title event
+    •   Filter events by person, user can select multiple people
